@@ -1,60 +1,157 @@
 ﻿using System;
 using System.IO;
-using static CheckPassword.PasswordRules;
 using System.Text.Json;
 
 namespace CheckPassword
 {
     public class CheckPassword
     {
-        public PasswordRules importRules()
+        public PasswordRules importRules(string path)
         {var rules = new PasswordRules();
-            using (var file = new FileStream("PasswordRules.json", FileMode.Open))
+            using (var file = new FileStream(path, FileMode.Open))
             { 
                 rules = JsonSerializer.DeserializeAsync<PasswordRules>(file).Result;
             }
             return rules; 
         }
 
-        public int PasswordCheck(string password)
+        public bool PasswordCheck(string password, string pathToRules)
         {
-            int check = 0;
-            int capLetterCount = 0;
-            int smallLetterCount = 0;
+            bool check = false;
+            int capLetterCountRus = 0;
+            int capLetterCountEn = 0;
+            int smallLetterCountRus = 0;
+            int smallLetterCountEn = 0;
             int intCount = 0;
             int symbolCount = 0;
             
-            var rules = new PasswordRules();
-            rules = importRules();
-            string pass = password;
-            for (int i = 0; i < pass.Length; ++i)
-            {
-                int symNum = (int)Convert.ToChar(pass[i]);
-
-                if (symNum >= 65 & symNum <= 90 | symNum >= 65 & symNum <= 90)
-                { 
-                    capLetterCount++;
-                 }
-                if (symNum >= 97 & symNum <= 122 | symNum >= 224 & symNum <= 255)
-                { 
-                    smallLetterCount++;
-                }
-                if (symNum >= 48 & symNum <= 57)
-                { 
-                    intCount++;
-                }
-                if (symNum >= 33 & symNum <= 47 | symNum >= 58 & symNum <= 64 | symNum >= 91 & symNum <= 96 | symNum >= 123 & symNum <= 126)
-                { 
-                    symbolCount++;
-                }
-
-                if (pass.Length >= rules.MinLen & capLetterCount != 0 & smallLetterCount != 0 & intCount != 0 &
-                    symbolCount != 0)
+            var rules = importRules(pathToRules);
+            
+            capLetterCountRus = CapLettersRusCount(password, rules);
+            capLetterCountEn = CapLettersEnCount(password, rules);
+            smallLetterCountRus = SmallLettersRusCount(password, rules);
+            smallLetterCountEn = SmallLettersEnCount(password, rules);
+            intCount = IntCount(password, rules);
+            symbolCount = SymbolsCount(password, rules);
+            
+            if (password.Length >= rules.MinLen && capLetterCountRus+capLetterCountEn >= rules.MinCapLetter && smallLetterCountRus+smallLetterCountEn >= rules.MinSmallLetter && intCount >=rules.MinInt &&
+                    symbolCount >= rules.MinSymbol)
                 {
-                    check = 1;
+                    check = true;
                 }
+            if (rules.EnYesNo== 0 && capLetterCountEn+smallLetterCountEn>0 || rules.RusYesNo== 0 && capLetterCountRus+smallLetterCountRus>0)
+            {
+                check = false;
             }
             return check;
+        }
+
+        int CapLettersRusCount(string password, PasswordRules rules)
+        {
+            int count = 0;
+
+            foreach (var letter in password)
+            {
+                foreach (var capLetterRus in rules.CapLettersRus)
+                {
+                    if (letter == capLetterRus)
+                    {
+                        count++;
+                    }
+                }
+            }
+            
+            return count;
+        }
+        
+        int SmallLettersRusCount(string password, PasswordRules rules)
+        {
+            int count = 0;
+
+            foreach (var letter in password)
+            {
+                foreach (var smallLetterRus in rules.SmallLettersRus)
+                {
+                    if (letter == smallLetterRus)
+                    {
+                        count++;
+                    }
+                }
+            }
+            
+            return count;
+        }
+        
+        int CapLettersEnCount(string password, PasswordRules rules)
+        {
+            int count = 0;
+
+            foreach (var letter in password)
+            {
+                foreach (var capLetterEn in rules.CapLettersEn)
+                {
+                    if (letter == capLetterEn)
+                    {
+                        count++;
+                    }
+                }
+            }
+            
+            return count;
+        }
+        
+        int SmallLettersEnCount(string password, PasswordRules rules)
+        {
+            int count = 0;
+
+            foreach (var letter in password)
+            {
+                foreach (var smallLetterEn in rules.SmallLettersEn)
+                {
+                    if (letter == smallLetterEn)
+                    {
+                        count++;
+                    }
+                }
+            }
+            
+            return count;
+        }
+        
+        int SymbolsCount(string password, PasswordRules rules)
+        {
+            int count = 0;
+            
+            foreach (var letter in password)
+            {
+                foreach (var symbol in rules.Symbols)
+                {
+                    if (letter == symbol)
+                    {
+                        count++;
+                    }
+                }
+            }
+
+            return count;
+        }
+        
+        int IntCount(string password, PasswordRules rules)
+        {
+            int count = 0;
+
+            foreach (var letter in password)
+            {
+                foreach (var _int in rules.Int)
+                {
+                    if (letter == _int)
+                    {
+                        count++;
+                    }
+                }
+            }
+            
+            return count;
         }
     }
 }
